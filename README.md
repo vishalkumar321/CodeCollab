@@ -1,146 +1,203 @@
 # 💻 CodeCollab — Collaborative Code Review & PR Management System
 
-CodeCollab is a professional, production-ready code review and pull request management platform. It enables development teams to create repositories, open pull requests, view diffs line-by-line, leave inline comments, automatically trigger rule-based static code reviews, and track review SLA breaches.
+<p align="center">
+  <img src="https://img.shields.io/badge/Java-17-orange?style=for-the-badge&logo=java" alt="Java 17" />
+  <img src="https://img.shields.io/badge/Spring_Boot-3.2.5-brightgreen?style=for-the-badge&logo=springboot" alt="Spring Boot 3.2.5" />
+  <img src="https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react" alt="React 19" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=for-the-badge&logo=tailwindcss" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/Docker-Supported-blue?style=for-the-badge&logo=docker" alt="Docker" />
+  <img src="https://img.shields.io/badge/Vercel-Frontend-black?style=for-the-badge&logo=vercel" alt="Vercel" />
+  <img src="https://img.shields.io/badge/Render-Backend-46E3B7?style=for-the-badge&logo=render" alt="Render" />
+</p>
+
+CodeCollab is a state-of-the-art, production-ready collaborative code review and pull request orchestration platform. It is engineered with an event-driven architecture using **Spring Boot 3.2.5** and a premium, responsive **React 19** frontend styled with **Tailwind CSS v4**.
 
 ---
 
 ### 🌐 Live Deployment Links
-* **Frontend (Vercel):** [https://code-collab-one-omega.vercel.app/](https://code-collab-one-omega.vercel.app/)
-* **Backend (Render):** [https://codecollab-sc8z.onrender.com](https://codecollab-sc8z.onrender.com)
+* 🎨 **Frontend (Vercel):** [https://code-collab-one-omega.vercel.app/](https://code-collab-one-omega.vercel.app/)
+* 🔌 **Backend (Render):** [https://codecollab-sc8z.onrender.com](https://codecollab-sc8z.onrender.com)
 
 ---
 
-## ✨ Key Features
-1. **Core Repository & PR Management:** Create codebases, open pull requests, select reviewers, and track PR lifecycle states (Open, Reviewing, Approved, Merged, Closed).
-2. **Automated Static Code Review:** An event-driven rule engine automatically scans submitted files for banned keywords, file-size limits, empty descriptions, and excessive changed file counts.
-3. **Interactive Line-by-Line Commenting:** Leave inline discussions on diff lines. Team members can mark threads as resolved once feedback is addressed.
-4. **SLA Breach Tracker:** Enforces a 24-hour review SLA. The system tracks review durations and triggers scheduler alerts if reviews breach the deadline.
-5. **Detailed Audit Timelines:** Stores state transitions, reviews, approvals, and comments in a history log to visualize the PR lifecycle.
+## 🏗️ Component & Event-Driven Architecture
+
+CodeCollab leverages Spring's asynchronous application event multicaster to decouples transaction logic from background tasks like static analysis, database audit logging, and SLA scheduling.
+
+```mermaid
+graph TD
+    %% Clients
+    User[React Frontend / Vercel] -->|HTTP Requests / REST| Gateway[Spring Security / JWT Filter]
+
+    %% Security & Routing
+    Gateway -->|Context Authenticated| Controller[REST Controllers]
+
+    %% Services & Persistence
+    Controller --> Services[Business Services]
+    Services --> DB[(PostgreSQL Database)]
+
+    %% Event Multicaster
+    Services -->|Publishes Events| Multicaster[Spring Event Publisher]
+
+    %% Asynchronous Listeners
+    Multicaster -->|Async State Change Event| AuditListener[Audit Timeline Logger]
+    Multicaster -->|Async PR Created Event| AutoReviewListener[Auto-Review Static Analyzer]
+    Multicaster -->|Async SLA Breach Check| SLAListener[SLA Tracker Scheduler]
+
+    %% Tasks
+    AutoReviewListener -->|Runs Rules & Saves| RuleEngine[Banned Words / Size Limit / File Count Rules]
+    SLAListener -->|Schedules Checks| SLATask[SLA Cron Job]
+
+    %% Styling
+    style User fill:#61DAFB,stroke:#333,stroke-width:2px,color:#000
+    style DB fill:#336791,stroke:#333,stroke-width:2px,color:#fff
+    style RuleEngine fill:#ff9900,stroke:#333,stroke-width:2px,color:#000
+    style Gateway fill:#6DB33F,stroke:#333,stroke-width:2px,color:#fff
+```
 
 ---
 
-## 🛠️ Tech Stack
+## 🔥 Key Technical Capabilities
 
-### Frontend
-* **Core:** React 19, Vite (Fast HMR build tool)
-* **Styling:** Tailwind CSS, PostCSS (v4)
-* **Icons:** Lucide React
-* **Client & Routing:** Axios (intercepted JWT auth), React Router DOM (v7)
+### ⚡ Asynchronous Auto-Review Engine
+When a pull request is submitted, a static analyzer instantly scans code contents and attaches scores/flags using:
+* **EmptyDescriptionRule:** Blocks or flags PRs submitted without documentation.
+* **BannedKeywordRule:** Scans source code changes for restricted keywords (e.g. `TODO`, `deprecated`, `FIXME`, hardcoded credentials).
+* **FileSizeRule:** Flags large file changes exceeding 500 lines to prevent review fatigue.
+* **FileCountRule:** Flags PRs containing over 10 changed files, enforcing micro-PRs.
 
-### Backend
-* **Core Framework:** Spring Boot 3.2.5, Java 17
-* **Security:** Spring Security (Stateless JWT token authentication, bcrypt hashing)
-* **Data Access:** Spring Data JPA, Hibernate ORM
-* **Database:** PostgreSQL
-* **Validation:** Jakarta Validation (API request DTO constraints)
-* **Utilities:** Lombok, Maven build manager
+### ⏱️ SLA Breach Management
+Ensures rapid code cycles through strict Service Level Agreements:
+* Enforces a 24-hour review SLA limit.
+* Records submission timestamps and launches asynchronous tracker jobs.
+* Triggers event-based warnings (`SLABreachEvent`) and visual badges on dashboards.
+
+### 💬 Inline Line-Level Review Comments
+Supports rich collaborative loops:
+* Reviewers can add comments on specific lines of any file diff.
+* Thread resolution state management (allows marking feedback threads as `Resolved` once fixed).
 
 ---
 
-## 📁 Code Structure
+## 🌐 API Endpoint Specification
+
+### 🔑 Authentication
+| Endpoint | Method | Payload | Description |
+| :--- | :--- | :--- | :--- |
+| `/api/auth/register` | `POST` | `RegisterRequest` | Registers account (ADMIN, DEVELOPER, REVIEWER) |
+| `/api/auth/login` | `POST` | `LoginRequest` | Logs in and retrieves JWT bearer token |
+
+### 📂 Repositories & Pull Requests
+| Endpoint | Method | Headers | Description |
+| :--- | :--- | :--- | :--- |
+| `/api/repos` | `POST` | `Bearer <Token>` | Creates a new repository |
+| `/api/repos` | `GET` | `Bearer <Token>` | Returns all active repositories |
+| `/api/prs` | `POST` | `Bearer <Token>` | Opens a PR with code diffs & assigned reviewers |
+| `/api/prs/{id}/files` | `GET` | `Bearer <Token>` | Retrieves all modified files under a PR |
+| `/api/prs/files/{fileId}/diff` | `GET` | `Bearer <Token>` | Returns line-by-line file diff details |
+
+### 💬 Review & Discussion
+| Endpoint | Method | Headers | Description |
+| :--- | :--- | :--- | :--- |
+| `/api/prs/{prId}/comments` | `POST` | `Bearer <Token>` | Posts an inline line-specific comment |
+| `/api/comments/{id}/resolve` | `PATCH` | `Bearer <Token>` | Toggles resolution state of a comment thread |
+| `/api/prs/{id}/auto-review` | `GET` | `Bearer <Token>` | Returns static code analyzer warnings |
+| `/api/prs/{id}/sla` | `GET` | `Bearer <Token>` | Gets SLA tracker status and hours remaining |
+
+---
+
+## 📁 Repository Directory Structure
 
 ```text
 codeCollab/
 ├── backend/
 │   ├── src/main/java/com/codecollab/
-│   │   ├── admin/             # Admin stats & dashboard logic
-│   │   ├── audit/             # Timeline event auditing & logs
-│   │   ├── auth/              # JWT filter, config, utility & controller
-│   │   ├── autoreview/        # Rule-based auto review engine (Banned keywords, size rules)
-│   │   ├── comment/           # Inline PR file commenting
-│   │   ├── diff/              # Diff calculation strategy
-│   │   ├── events/            # Spring ApplicationEvents (Audit logs, SLA, Auto-review)
-│   │   ├── pullrequest/       # PR state machine, builders & controllers
-│   │   ├── repository/        # Repository creation & retrieval
-│   │   ├── sla/               # Background scheduler & tracker for SLA breach limits
-│   │   └── user/              # User account repository & service
-│   ├── src/main/resources/    # Application properties (environment configuration)
-│   └── Dockerfile             # Multi-stage production Docker configuration
+│   │   ├── admin/             # Admin reporting, dashboard data summaries
+│   │   ├── audit/             # Auditable audit logs & lifecycle histories
+│   │   ├── auth/              # JWT authorization filter, configs, & login handlers
+│   │   ├── autoreview/        # Automated static validation engine & compliance rules
+│   │   ├── comment/           # Discussions & thread resolutions
+│   │   ├── diff/              # Diff strategy implementations (Line-level comparison)
+│   │   ├── events/            # Application events (Audit loggers, Auto-reviewers)
+│   │   ├── pullrequest/       # PR state managers, state machines, & state transitions
+│   │   ├── repository/        # Project codebase database operations
+│   │   ├── sla/               # Deadline counters & cron schedulers
+│   │   └── user/              # User domains and roles
+│   ├── src/main/resources/    # Application parameters (supports environment variables)
+│   └── Dockerfile             # Production multi-stage Docker build pipeline
 ├── frontend/
 │   ├── src/
-│   │   ├── api/               # Axios instance configuration with base API routing
-│   │   ├── assets/            # Static assets
-│   │   ├── components/        # Reusable UI parts (DiffViewer, CommentThread, SLABadge)
-│   │   ├── context/           # AuthContext (keeps track of JWT, user roles & logins)
-│   │   └── pages/             # Dashboard, Repository Details, PR Details, Register, Login
-│   ├── tailwind.config.js     # Layout styling setup
-│   └── package.json           # Frontend npm dependencies
-└── run.ps1                    # One-click runner script for Windows PowerShell
+│   │   ├── api/               # Axios routing config & JWT authorization interceptors
+│   │   ├── components/        # Layout, Status badges, Diff viewer, Comment section
+│   │   ├── context/           # Authentication state provider
+│   │   └── pages/             # Login, Dashboard, Admin panels, New PR, Repository details
+│   ├── tailwind.config.js     # Styling setup
+│   └── package.json           # Frontend packages
+└── run.ps1                    # One-click runner script for local Windows runs
 ```
-
----
-
-## ⚙️ How It Works
-1. **Developer Registration:** A developer registers an account (Author, Reviewer, or Admin) and logs in.
-2. **Repository Creation:** Authors create virtual codebases.
-3. **Pull Request Submissions:** Authors create a PR, supply code diffs (original vs modified contents), and assign reviewers.
-4. **Auto-Review Check:** Spring boot triggers an asynchronous auto-review event. It scores the files and lists immediate static analysis warnings.
-5. **Interactive Review:** Reviewers view the diffs side-by-side, write inline comments on specific lines, approve or request changes, and resolve open comment threads.
-6. **SLA Deadlines:** If the PR is not resolved or reviewed in 24 hours, the `SLAScheduler` flags the breach.
 
 ---
 
 ## 🚀 How to Run Locally
 
-### The Quick Way (Windows PowerShell)
-We have provided an automated script that installs Java 17 and Maven locally in a temporary directory (does not require admin rights or UAC elevation) and launches both servers in separate windows.
+### ⚡ Rapid Launch (Windows PowerShell)
+The root directory includes a helper script `run.ps1` that automatically downloads OpenJDK 17 and Apache Maven 3.9.9 locally (without requiring admin configuration or modifying system variables), registers paths, and starts both the React frontend and Spring Boot backend in separate PowerShell windows.
 
-Open PowerShell in the root directory and execute:
+Simply open PowerShell in the project directory and run:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\run.ps1
 ```
 
 ---
 
-### The Manual Way
+### 🛠️ Manual CLI Launch
 
-#### Prerequisites
-* Install **JDK 17**
-* Install **Apache Maven 3.9+**
-* Install **Node.js (v18+)**
-* Running **PostgreSQL Database** instance
+#### 1. Database Setup
+Ensure you have a running PostgreSQL database and set the connection parameters. Alternatively, the application defaults to connecting to a secure PostgreSQL sandbox database hosted on Render.
 
-#### 1. Setup Backend
-1. Navigate to the backend folder:
-   ```bash
-   cd backend
-   ```
-2. Configure your database credentials in `src/main/resources/application.properties` (or set the environment variables `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`).
-3. Run the Spring Boot application:
-   ```bash
-   mvn spring-boot:run
-   ```
-   *The backend will boot on port `8085`.*
+#### 2. Start the Backend
+```bash
+cd backend
+# Runs compiler, downloads maven packages, and boots Spring Boot
+mvn spring-boot:run
+```
+*The API server will listen on port `8085`.*
 
-#### 2. Setup Frontend
-1. Navigate to the frontend folder:
-   ```bash
-   cd ../frontend
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Run the development server:
-   ```bash
-   npm run dev
-   ```
-   *The frontend will boot on `http://localhost:5173`.*
+#### 3. Start the Frontend
+```bash
+cd ../frontend
+npm install
+# Starts local dev webserver
+npm run dev
+```
+*The client application will run on `http://localhost:5173`.*
 
 ---
 
-## 🚢 Production Deployment
+## 🚢 Cloud Production Deployment
 
-### Backend (Render via Docker)
-* **Runtime:** Docker
+### 🏓 Backend (Render Web Service)
+Render does not natively list Java in the runtime menu. Select **Docker** as your runtime to build using the multi-stage Dockerfile.
+* **Runtime:** `Docker`
 * **Root Directory:** `backend`
-* **Env Variables required:**
-  * `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`
-  * `JWT_SECRET` (Secure 256-bit token key)
-  * `ALLOWED_ORIGINS` (Your Vercel URL, e.g. `https://code-collab-one-omega.vercel.app`)
+* **Environment Variables:**
 
-### Frontend (Vercel)
-* **Framework Preset:** Vite
+| Key | Value | Details |
+| :--- | :--- | :--- |
+| **`DATABASE_URL`** | `jdbc:postgresql://<host>:<port>/<db>` | Database connection endpoint URL |
+| **`DATABASE_USERNAME`** | `your_user` | DB login username |
+| **`DATABASE_PASSWORD`** | `your_pass` | DB login password |
+| **`JWT_SECRET`** | `404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970` | Secure signing key for tokens |
+| **`ALLOWED_ORIGINS`** | `https://code-collab-one-omega.vercel.app` | **Target Frontend URL** |
+
+---
+
+### 🎨 Frontend (Vercel)
+Vercel automatically detects Vite configurations inside monorepos.
+* **Framework Preset:** `Vite`
 * **Root Directory:** `frontend`
-* **Env Variables required:**
-  * `VITE_API_URL` (Your Render Backend URL with `/api` appended, e.g. `https://codecollab-sc8z.onrender.com/api`)
+* **Environment Variables:**
+
+| Key | Value | Details |
+| :--- | :--- | :--- |
+| **`VITE_API_URL`** | `https://codecollab-sc8z.onrender.com/api` | **Target Backend URL** (Append `/api` at the end) |
