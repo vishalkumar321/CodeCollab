@@ -5,6 +5,7 @@ import com.codecollab.diff.DiffLine;
 import com.codecollab.pullrequest.model.PRFile;
 import com.codecollab.pullrequest.model.PullRequest;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,7 +22,7 @@ public class PRController {
 
     @PostMapping
     public ResponseEntity<PullRequest> createPR(
-            @RequestBody CreatePRRequest request,
+            @Valid @RequestBody CreatePRRequest request,
             HttpServletRequest httpRequest) {
         Long userId = (Long) httpRequest.getAttribute("userId");
         return ResponseEntity.ok(prService.createPR(userId, request));

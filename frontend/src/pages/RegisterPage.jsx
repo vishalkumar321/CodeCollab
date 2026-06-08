@@ -10,20 +10,43 @@ export default function RegisterPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'AUTHOR' });
+  const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
 
+  const validate = () => {
+    const errors = {};
+    if (!form.name || form.name.trim().length < 2) {
+      errors.name = 'Name must be at least 2 characters';
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!form.email || !emailRegex.test(form.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+    if (!form.password || form.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
+    }
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({});
+    if (!validate()) return;
     setLoading(true);
     try {
       const res = await api.post('/auth/register', form);
       login(res.data);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      if (err.response?.data?.errors) {
+        setFieldErrors(err.response.data.errors);
+      } else {
+        setError(err.response?.data?.message || 'Registration failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -51,18 +74,20 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div>
               <label className="block text-sm text-gray-400 mb-1.5" htmlFor="name">Full Name</label>
               <input
                 id="name"
                 type="text"
-                required
                 value={form.name}
                 onChange={e => setForm({ ...form, name: e.target.value })}
                 placeholder="John Doe"
-                className="input-field"
+                className={`input-field ${fieldErrors.name ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
               />
+              {fieldErrors.name && (
+                <p className="text-red-400 text-xs mt-1 animate-fadeIn">{fieldErrors.name}</p>
+              )}
             </div>
 
             <div>
@@ -70,12 +95,14 @@ export default function RegisterPage() {
               <input
                 id="reg-email"
                 type="email"
-                required
                 value={form.email}
                 onChange={e => setForm({ ...form, email: e.target.value })}
                 placeholder="you@example.com"
-                className="input-field"
+                className={`input-field ${fieldErrors.email ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
               />
+              {fieldErrors.email && (
+                <p className="text-red-400 text-xs mt-1 animate-fadeIn">{fieldErrors.email}</p>
+              )}
             </div>
 
             <div>
@@ -84,12 +111,10 @@ export default function RegisterPage() {
                 <input
                   id="reg-password"
                   type={showPass ? 'text' : 'password'}
-                  required
-                  minLength={6}
                   value={form.password}
                   onChange={e => setForm({ ...form, password: e.target.value })}
                   placeholder="Min. 6 characters"
-                  className="input-field pr-10"
+                  className={`input-field pr-10 ${fieldErrors.password ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
                 />
                 <button
                   type="button"
@@ -99,6 +124,9 @@ export default function RegisterPage() {
                   {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+              {fieldErrors.password && (
+                <p className="text-red-400 text-xs mt-1 animate-fadeIn">{fieldErrors.password}</p>
+              )}
             </div>
 
             <div>

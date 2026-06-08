@@ -2,6 +2,7 @@ package com.codecollab.comment;
 
 import com.codecollab.comment.model.Comment;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +19,7 @@ public class CommentController {
     @PostMapping("/prs/{prId}/comments")
     public ResponseEntity<Comment> addComment(
             @PathVariable Long prId,
-            @RequestBody AddCommentRequest request,
+            @Valid @RequestBody AddCommentRequest request,
             HttpServletRequest httpRequest) {
         Long userId = (Long) httpRequest.getAttribute("userId");
         return ResponseEntity.ok(commentService.addComment(prId, userId, request));

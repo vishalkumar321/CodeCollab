@@ -2,6 +2,7 @@ package com.codecollab.repository;
 
 import com.codecollab.repository.model.Repository;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +18,7 @@ public class RepoController {
 
     @PostMapping
     public ResponseEntity<Repository> createRepo(
-            @RequestBody CreateRepoRequest request,
+            @Valid @RequestBody CreateRepoRequest request,
             HttpServletRequest httpRequest) {
         Long userId = (Long) httpRequest.getAttribute("userId");
         return ResponseEntity.ok(repoService.createRepo(userId, request));

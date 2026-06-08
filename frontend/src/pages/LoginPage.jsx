@@ -8,20 +8,40 @@ export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
+  const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
 
+  const validate = () => {
+    const errors = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!form.email || !emailRegex.test(form.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+    if (!form.password) {
+      errors.password = 'Password is required';
+    }
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({});
+    if (!validate()) return;
     setLoading(true);
     try {
       const res = await api.post('/auth/login', form);
       login(res.data);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid credentials');
+      if (err.response?.data?.errors) {
+        setFieldErrors(err.response.data.errors);
+      } else {
+        setError(err.response?.data?.message || 'Invalid credentials');
+      }
     } finally {
       setLoading(false);
     }
@@ -52,19 +72,21 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div>
               <label className="block text-sm text-gray-400 mb-1.5" htmlFor="email">Email</label>
               <input
                 id="email"
                 type="email"
-                required
                 autoComplete="email"
                 value={form.email}
                 onChange={e => setForm({ ...form, email: e.target.value })}
                 placeholder="you@example.com"
-                className="input-field"
+                className={`input-field ${fieldErrors.email ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
               />
+              {fieldErrors.email && (
+                <p className="text-red-400 text-xs mt-1 animate-fadeIn">{fieldErrors.email}</p>
+              )}
             </div>
 
             <div>
@@ -73,12 +95,11 @@ export default function LoginPage() {
                 <input
                   id="password"
                   type={showPass ? 'text' : 'password'}
-                  required
                   autoComplete="current-password"
                   value={form.password}
                   onChange={e => setForm({ ...form, password: e.target.value })}
                   placeholder="••••••••"
-                  className="input-field pr-10"
+                  className={`input-field pr-10 ${fieldErrors.password ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
                 />
                 <button
                   type="button"
@@ -88,6 +109,9 @@ export default function LoginPage() {
                   {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+              {fieldErrors.password && (
+                <p className="text-red-400 text-xs mt-1 animate-fadeIn">{fieldErrors.password}</p>
+              )}
             </div>
 
             <button
